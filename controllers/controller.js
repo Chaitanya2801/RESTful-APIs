@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const movieModel = require('../models/movieModel');
+const pool = require('./db');
 
 function getMovieDetails(req, res) {
     movieModel.find({}, (err, data)=> {
