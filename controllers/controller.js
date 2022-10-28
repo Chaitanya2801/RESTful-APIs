@@ -15,7 +15,7 @@ function getMovieByID(req, res) {
             res.status(200).send(data);
         }
         else if(data == null){
-            res.status(404).send({ status: 404, message: 'movie not found' });
+            res.status(404).send({ status: 404, message: 'Movie not found' });
         }
         else{
             throw err;
