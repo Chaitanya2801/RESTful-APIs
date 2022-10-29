@@ -1,70 +1,60 @@
-const { v4: uuidv4 } = require('uuid');
-const movieModel = require('../models/movieModel');
 const pool = require('./db');
 
-function getMovieDetails(req, res) {
-    movieModel.find({}, (err, data)=> {
-        if(!err) {
-            res.status(200).send(data);
-        }
-    })
-}
+async function getMovieDetails (req, res) {
+    try {
+        const allMovies = await pool.query("SELECT * FROM movies");
+        res.json(allMovies.rows);
+    } catch (err) {
+        console.error(err.message);
+    }
+};
 
-function getMovieByID(req, res) {
-    movieModel.findOne({movie_id: req.params.id}, (err, data)=> {
-        if(data!==null) {
-            res.status(200).send(data);
-        }
-        else if(data == null){
-            res.status(404).send({ status: 404, message: 'Movie not found' });
-        }
-        else{
-            throw err;
-        }
-    })
-}
+async function addMovie(req, res) {
+    try {
+        const { movie_name } = req.body;
+        const { movie_genre } = req.body;
+        const { imdb_rating } = req.body;
+        const newMovieDetails = await pool.query(
+            "INSERT INTO movies (movie_name, movie_genre, imdb_rating) VALUES($1, $2, $3) RETURNING *",
+            [movie_name, movie_genre, imdb_rating]);
 
+        res.json(newMovieDetails.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+    }
+};
 
-function addMovie(req, res) {
-    let movie = new movieModel({
-        movie_id: uuidv4(),
-        movie_name: req.body.movie_name,
-        movie_genre: req.body.movie_genre,
-        imdb_rating: req.body.imdb_rating
+async function getMovieByID(req, res){
+    try {
+        const {id} = req.params;
+        const movie = await pool.query("SELECT * FROM movies WHERE movie_id = $1", [id]);
+        res.json(movie.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+    }
+};
+
+async function deleteMovie(req, res) {
+    try {
+        const {id} = req.params;
+        const deleteMovie = await pool.query("DELETE FROM movies WHERE movie_id = $1", [id])
+        res.json("Deleted Successfully");
+    } catch (err) {
+        console.error(err.message);
+    }
+};
+
+async function updateMovie(req, res) {
+    try {
+        const {id} = req.params;
+        const { movie_genre } = req.body;
         
-    })
-    movie.save((err)=> {
-        if(!err){
-            res.status(201).send({ message: "movie added successfully" });
-        }
-        else{
-            throw err;
-        }
-    })
-    
-}
+        const updateMovie = await pool.query(
+            "UPDATE movies SET movie_genre = $1 WHERE movie_id = $2", [movie_genre, id]);
+        res.json("Movie updated successfully");
+    } catch (err) {
+        console.error(err.message);
+    }
+};
 
-function deleteMovie(req, res) {
-    movieModel.deleteOne({movie_id: req.params.id}, (err, data)=>{
-        if(err){
-            throw err;
-        } else{
-            res.status(200).send({ message: 'movie deleted successfully' });
-        }
-    });
-    
-}
-
-function updateMovie(req, res) {
-    movieModel.updateOne({movie_id: req.params.id}, (err, data)=>{
-        if(data!==null){
-            movieModel[movieModel.indexOf(movie_id)] = req.body;
-            res.status(200).send({ message: 'movie updated successfully' })
-        }
-        else if(data == null){
-            res.status(404).send({ status: 404, message: 'movie with that id does not exist' });
-        }
-    })
-}
-
-module.exports = { getMovieDetails, getMovieByID, addMovie, deleteMovie, updateMovie };
+module.exports = { getMovieDetails, addMovie, getMovieByID, deleteMovie, updateMovie };
